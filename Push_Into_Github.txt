@@ -1,0 +1,42 @@
+
+
+Remove-Item -Recurse -Force ".git"
+
+
+
+
+
+git init
+git add .
+git commit -m "Part 1"
+git branch -M main
+git remote add origin "https://github.com/manishrnl/Spring-Linked-In.git"
+git push -u origin main
+
+git remote set-url origin "https://github.com/manishrnl/Spring-Linked-In.git"
+
+
+#To start postgres sql in termux  
+pg_ctl -D $PREFIX/var/lib/postgresql start
+
+
+
+
+#################     Kiil Port
+
+
+
+
+#To kill task like port 8080 , tun following command in cmd as an administration
+for /f "tokens=5" %a in ('netstat -aon ^| findstr :8080 ^| findstr LISTENING') do taskkill /PID %a /F
+
+
+
+
+
+#to kill all Application that is being used by Java on termux
+pkill -9 java
+
+#to verify if 8089 port was killed in termux
+ps -A | grep java
+

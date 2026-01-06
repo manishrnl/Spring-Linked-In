@@ -1,0 +1,16 @@
+# IntelliJ IDEA files
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+HELP.md
+# Maven build output (matches all modules)
+target/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# If you still want to ignore specific scratch folders
+Scratches and Consoles/
