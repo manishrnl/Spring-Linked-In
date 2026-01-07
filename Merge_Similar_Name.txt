@@ -1,0 +1,29 @@
+1. git rebase -i --root
+2. git config --global core.editor "notepad"
+
+3. Now change the text in notepad for same name from "Pick" to s .
+ex -> pick a1b2c3d Part 1
+      pick e4f5g6h Part 1
+      pick e4f5g6h Part 1
+      pick e4f5g6h Part 1
+      pick i7j8k9l Part 2
+      pick i7j8k9l Part 2
+      pick i7j8k9l Part 2
+      pick i7j8k9l Part 2
+      pick m0n1o2p Part 2
+
+      After changing ->
+
+      pick a1b2c3d Part 1
+      s e4f5g6h Part 1
+      s e4f5g6h Part 1
+      s e4f5g6h Part 1
+      pick i7j8k9l Part 2
+      s i7j8k9l Part 2
+      s i7j8k9l Part 2
+      s i7j8k9l Part 2
+      s m0n1o2p Part 2
+
+4. Now Save the Notepad Edits
+4. now run command git push origin main --force-with-lease to commit changes
+5. All commits with same name is merged into one

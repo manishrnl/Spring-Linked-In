@@ -26,4 +26,10 @@ spring:
           filters:
             - StripPrefix=2
 
+        - id: connection-service
+          uri: lb://CONNECTION-SERVICE
+          predicates:
+            - Path=/api/v1/connections/**
+          filters:
+            - StripPrefix=2
 
