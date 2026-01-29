@@ -1,0 +1,44 @@
+server:
+  port: 8080
+
+jwt:
+  secretKey: sdfgfgdsfg7sd890fgsdfgsidfjgskdjfhglwut9w834ut90jkfjsdfgw9483utoegdfklgndfgowejt59u6
+# Bearer Token->  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJYLVVzZXItSWQiOjYsIm5hbWUiOiJNYW5pc2ggS3VtYXIiLCJhZG1pbiI6dHJ1ZSwiaWF0IjoxODE2MjM5MDIyfQ.ZOwdDlXC0V18PNVP7Zp8lNthIyp-GpWxEF97d7HO9Fg
+eureka:
+  client:
+    service-url:
+      default-zone: http://localhost:8761/eureka
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/v1/users/**
+          filters:
+            - StripPrefix=2
+
+        - id: posts-service
+          uri: lb://POSTS-SERVICE
+          predicates:
+            - Path=/api/v1/posts/**
+          filters:
+            - StripPrefix=2
+            - name: Authentication
+              args:
+                Enabled: true
+
+        - id: connection-service
+          uri: lb://CONNECTION-SERVICE
+          predicates:
+            - Path=/api/v1/connections/**
+          filters:
+            - StripPrefix=2
+            - name: Authentication
+              args:
+                Enabled: true
+

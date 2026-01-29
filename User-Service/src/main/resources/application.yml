@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: user-service # The Gateway uses this to find the service
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
