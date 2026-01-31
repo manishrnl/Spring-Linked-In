@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import java.util.List;
 
 @FeignClient(name = "connection-service", path = "/connections")
-public interface Connections {
+public interface ConnectionClient {
 
 
     @GetMapping("/core/deg-1")

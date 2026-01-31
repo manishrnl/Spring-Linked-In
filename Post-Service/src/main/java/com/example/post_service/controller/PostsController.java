@@ -1,7 +1,7 @@
 package com.example.post_service.controller;
 
 import com.example.post_service.auth.UserContextHolder;
-import com.example.post_service.clients.Connections;
+import com.example.post_service.clients.ConnectionClient;
 import com.example.post_service.dto.PostCreateRequestDto;
 import com.example.post_service.dto.PostDto;
 import com.example.post_service.repository.PostRepository;
@@ -22,13 +22,13 @@ import java.util.List;
 public class PostsController {
 
     private final PostsService postsService;
-    private final Connections connectionClient;
+    private final ConnectionClient connectionClient;
     private final PostRepository postRepository;
 
     @PostMapping()
     public ResponseEntity<PostDto> createPost(@RequestBody PostCreateRequestDto postsDto) {
-        Long userId = UserContextHolder.getCurrentUserId();
-        PostDto postDto1 = postsService.createPosts(postsDto, userId);
+
+        PostDto postDto1 = postsService.createPosts(postsDto);
         return new ResponseEntity<>(postDto1, HttpStatus.CREATED);
     }
 
