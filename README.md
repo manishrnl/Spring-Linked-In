@@ -2,10 +2,25 @@
 
 1. Start Docker Desktop application first
 
-
 2. Start the Neo4j Desktop application and the Database so configured while setting up the
    project
 
+- Configure neo4j db . Delete all data inside particular db used for this project by running command :
+
+```
+    // Deletes all relationships and all nodes
+    MATCH (n)
+    DETACH DELETE n;
+```
+
+- Now run below commands inside the terminal of neo4j db
+
+```
+    MERGE (a:Person {userId: 1, name: "Manish Kumar"});
+    MERGE (a:Person {userId: 2, name: "Radhe Shyam"});
+    MERGE (a:Person {userId: 3, name: "Premanand Ji Maharaj"});
+    MERGE (b:Person {userId: 4, name: "Indresh Ji Maharaj"});  
+```
 
 3. Run docker via cmd inside root directory of the project using below command :
 
