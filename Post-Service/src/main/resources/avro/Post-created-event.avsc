@@ -1,0 +1,22 @@
+{
+  "name": "PostCreatedEvents",
+  "namespace": "com.example.post_service.events",
+  "type": "record",
+  "fields": [
+    {
+      "name": "creatorId",
+      "type": "long",
+      "default": 0
+    },
+    {
+      "name": "content",
+      "type": "string",
+      "default": ""
+    },
+    {
+      "name": "postId",
+      "type": "long",
+      "default": 0
+    }
+  ]
+}

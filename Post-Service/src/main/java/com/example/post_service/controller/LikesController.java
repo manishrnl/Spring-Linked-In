@@ -17,13 +17,13 @@ public class LikesController {
 
     @PostMapping("/{postId}")
     public ResponseEntity<Void> likePost(@PathVariable Long postId) {
-        likeService.likePost(postId, 1L);
+        likeService.likePost(postId);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{postId}")
     public ResponseEntity<Void> unLikePost(@PathVariable Long postId) {
-        likeService.unLikePost(postId, 1L);
+        likeService.unLikePost(postId);
         return ResponseEntity.ok().build();
     }
 }
