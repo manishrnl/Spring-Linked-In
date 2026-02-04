@@ -71,6 +71,6 @@ public class AuthenticationGatewayFilterFactory extends AbstractGatewayFilterFac
 
     @Data
     public static class Config {
-        private boolean enabled;
+        private boolean enabled = true;
     }
 }

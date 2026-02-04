@@ -5,7 +5,8 @@
 2. Start the Neo4j Desktop application and the Database so configured while setting up the
    project
 
-- Configure neo4j db . Delete all data inside particular db used for this project by running command :
+- Configure neo4j db . Delete all data inside particular db used for this project by running
+  command :
 
 ```
     // Deletes all relationships and all nodes
@@ -25,6 +26,7 @@
 3. Run docker via cmd inside root directory of the project using below command :
 
 ```
+   docker compose down 
    docker-compose up -d
 ```
 
