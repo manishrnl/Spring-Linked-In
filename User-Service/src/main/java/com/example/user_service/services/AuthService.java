@@ -34,6 +34,7 @@ public class AuthService {
         user.setPassword(PasswordUtil.hashPassword(signupRequestDto.getPassword()));
 
         UserEntity savedUser = userRepository.save(user);
+        user.setPassword("");
         return modelMapper.map(savedUser, UserDto.class);
     }
 

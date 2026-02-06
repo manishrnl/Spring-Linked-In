@@ -56,6 +56,8 @@ eureka:
     fetch-registry: true
     register-with-eureka: true
   instance:
+    instance-id: ${spring.application.name}:${random.value}
+    hostname: notification-service
     # This helps services find each other inside Docker by container name
     prefer-ip-address: true
 
