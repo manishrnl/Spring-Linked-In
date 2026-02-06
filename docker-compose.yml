@@ -213,7 +213,7 @@ services:
   notification-service:
     build:
       context: ./notification-service
-    image: manishrnl/linked-in-app-notification-service:v0.0.1
+    image: manishrnl/linked-in-app-notification-service:latest
     container_name: notification-service
     ports:
       - "9060:9060"
@@ -246,7 +246,7 @@ services:
   connection-service:
     build:
       context: ./connection-service
-    image: manishrnl/linked-in-app-connection-service:v0.0.1
+    image: manishrnl/linked-in-app-connection-service:latest
     container_name: connection-service
     networks:
       - linkedin-networks
@@ -269,7 +269,7 @@ services:
   posts-service:
     build:
       context: ./posts-service
-    image: manishrnl/linked-in-app-post-service:v0.0.1
+    image: manishrnl/linked-in-app-post-service:latest
     container_name: post-service
     networks:
       - linkedin-networks
@@ -298,7 +298,7 @@ services:
   discovery-service:
     build:
       context: ./discovery-service
-    image: manishrnl/linked-in-app-discovery-service:v0.0.1
+    image: manishrnl/linked-in-app-discovery-service:latest
     container_name: discovery-service
     networks:
       - linkedin-networks
@@ -319,7 +319,7 @@ services:
   user-service:
     build:
       context: ./user-service
-    image: manishrnl/linked-in-app-user-service:v0.0.1
+    image: manishrnl/linked-in-app-user-service:latest
     container_name: user-service
     networks:
       - linkedin-networks
@@ -348,7 +348,7 @@ services:
   api-gateway:
     build:
       context: ./api-gateway
-    image: manishrnl/linked-in-app-api-gateway:v0.0.1
+    image: manishrnl/linked-in-app-api-gateway:latest
     container_name: api-gateway
     ports:
       - "8080:8080"

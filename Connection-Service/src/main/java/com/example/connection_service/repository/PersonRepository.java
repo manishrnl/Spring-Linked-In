@@ -15,30 +15,62 @@ public interface PersonRepository extends Neo4jRepository<PersonEntity, Long> {
     Optional<PersonEntity> getByName(String name);
 
 
-    @Query("MATCH (personA:Person) -[CONNECTED_TO]-(personB:Person) " +
-            "WHERE personA.userId = $userId " +
-            "RETURN personB")
+//    @Query("MATCH (personA:Person) -[CONNECTED_TO]-(personB:Person) " +
+//            "WHERE personA.userId = $userId " +
+//            "RETURN personB")
+//    List<PersonEntity> get1DegreeConnections(@Param("userId") Long userId);
+//
+//
+//    @Query("MATCH (p:Person {userId: $userId})-[:CONNECTED_TO*2]-(fof) " +
+//            "WHERE fof.userId <> $userId AND NOT (p)-[:CONNECTED_TO]-(fof) " +
+//            "RETURN  DISTINCT fof;")
+//    List<PersonEntity> get2DegreeConnections(@Param("userId") Long userId);
+//
+//
+//    @Query("MATCH (p:Person {userId: $userId})-[:CONNECTED_TO*3]-(threeHop) " +
+//            "WHERE threeHop.userId <> $userId " +
+//            "  AND NOT (p)-[:CONNECTED_TO*1..2]-(threeHop) " +  // Exclude yourself, 1st  degree, and 2nd degree
+//            "RETURN DISTINCT threeHop;")
+//    List<PersonEntity> get3DegreeConnections(@Param("userId") Long userId);
+//
+//
+//    @Query("MATCH (p:Person {userId:$userId}) -[:CONNECTED_TO*4]-(fourDeg) " +
+//            "WHERE fourDeg.userId <> $userId " +
+//            "AND NOT (p)-[:CONNECTED_TO*1..3]-(fourDeg)" +
+//            "RETURN DISTINCT fourDeg")
+//    List<PersonEntity> get4DegreeConnections(@Param("userId") Long userId);
+
+
+    // 1st Degree: Direct connections
+    @Query("MATCH (p:Person {userId: $userId})-[:CONNECTED_TO]-(friend) " +
+            "RETURN friend")
     List<PersonEntity> get1DegreeConnections(@Param("userId") Long userId);
 
-
-    @Query("MATCH (p:Person {userId: $userId})-[:CONNECTED_TO*2]-(fof) " +
-            "WHERE fof.userId <> $userId AND NOT (p)-[:CONNECTED_TO]-(fof) " +
-            "RETURN  DISTINCT fof;")
+    // 2nd Degree: Friends of friends (excluding self and direct friends)
+    @Query("MATCH (p:Person {userId: $userId})-[:CONNECTED_TO]-()-[:CONNECTED_TO]-(fof) " +
+            "WHERE fof.userId <> $userId " +
+            "AND NOT (p)-[:CONNECTED_TO]-(fof) " +
+            "RETURN DISTINCT fof")
     List<PersonEntity> get2DegreeConnections(@Param("userId") Long userId);
 
-
+    // 3rd Degree: Friends of friends of friends
     @Query("MATCH (p:Person {userId: $userId})-[:CONNECTED_TO*3]-(threeHop) " +
             "WHERE threeHop.userId <> $userId " +
-            "  AND NOT (p)-[:CONNECTED_TO*1..2]-(threeHop) " +  // Exclude yourself, 1st  degree, and 2nd degree
-            "RETURN DISTINCT threeHop;")
+            "AND NOT (p)-[:CONNECTED_TO*1..2]-(threeHop) " +
+            "RETURN DISTINCT threeHop")
     List<PersonEntity> get3DegreeConnections(@Param("userId") Long userId);
 
-
-    @Query("MATCH (p:Person {userId:$userId}) -[:CONNECTED_TO*4]-(fourDeg) " +
-            "WHERE fourDeg.userId <> $userId " +
-            "AND NOT (p)-[:CONNECTED_TO*1..3]-(fourDeg)" +
-            "RETURN DISTINCT fourDeg")
+    // 4th Degree
+    @Query("MATCH (p:Person {userId: $userId})-[:CONNECTED_TO*4]-(fourHop) " +
+            "WHERE fourHop.userId <> $userId " +
+            "AND NOT (p)-[:CONNECTED_TO*1..3]-(fourHop) " +
+            "RETURN DISTINCT fourHop")
     List<PersonEntity> get4DegreeConnections(@Param("userId") Long userId);
+
+
+
+
+
 
 
     @Query("OPTIONAL MATCH (p1:Person {userId: $senderId})-[r:REQUESTED_TO]->" +
