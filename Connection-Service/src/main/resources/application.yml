@@ -1,0 +1,51 @@
+spring:
+  main:
+    banner-mode: off
+  application:
+    name: connection-service # The Gateway uses this to find the service
+  kafka:
+    bootstrap-servers: kafka:9092
+    producer:
+      acks: all
+      retries: 5
+      # FIX: Capital 'K' in KafkaAvroSerializer
+      key-serializer: org.apache.kafka.common.serialization.LongSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      properties:
+        # Standardize property format for Schema Registry
+        schema.registry.url: http://schema-registry:8081
+        # Removed spring.json.add.type.headers as it's not used by Avro
+  neo4j:
+    uri: bolt://connections-db:7687
+    authentication:
+      username: neo4j
+      password: Manish@2009
+  cloud:
+    stream:
+          kafka:
+            binder:
+              producer-properties:
+                schema.registry.url: http://schema-registry:8081
+
+
+eureka:
+  client:
+    service-url:
+      # defaultZone must be camelCase for maximum compatibility
+      defaultZone: ${EUREKA_SERVER_ADDRESS:http://localhost:8761/eureka/}
+
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    # This helps services find each other inside Docker by container name
+    prefer-ip-address: true
+
+
+server:
+  port: 8001
+  servlet:
+    context-path: /connections
+
+
+
+

@@ -1,0 +1,15 @@
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: control-center
+  labels:
+    app: control-center
+spec:
+  type: LoadBalancer
+  selector:
+    app: control-center
+  ports:
+  - port: 9021
+    targetPort: 9021   # ← you can change to 9020
+    protocol: TCP

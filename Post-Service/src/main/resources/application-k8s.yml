@@ -1,0 +1,8 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_ADDRESS:http://discovery-service:8761/eureka/}
+    fetch-registry: false
+    register-with-eureka: false
+  instance:
+    prefer-ip-address: true

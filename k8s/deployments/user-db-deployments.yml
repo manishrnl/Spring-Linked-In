@@ -1,0 +1,36 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-db
+  labels:
+    app: user-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-db
+  template:
+    metadata:
+      labels:
+        app: user-db
+    spec:
+      containers:
+      - name: user-db
+        image: postgres:17
+        ports:
+        # No ports specified
+        env:
+        - name: POSTGRES_DB
+          value: "User_Service"
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          value: "Manish@2009"
+        volumeMounts:
+        - name: volume-0
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: volume-0
+        persistentVolumeClaim:
+          claimName: user-db-pvc-0

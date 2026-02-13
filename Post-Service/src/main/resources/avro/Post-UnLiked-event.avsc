@@ -1,0 +1,22 @@
+{
+  "name": "PostUnLikedEvents",
+  "namespace": "com.example.post_service.events",
+  "type": "record",
+  "fields": [
+    {
+      "name": "creatorId",
+      "type": "long",
+      "default": 0
+    },
+    {
+      "name": "postId",
+      "type": "long",
+      "default": 0
+    },
+    {
+      "name": "likedByUserId",
+      "type": "long",
+      "default": 0
+    }
+  ]
+}

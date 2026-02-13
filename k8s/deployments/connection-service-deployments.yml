@@ -1,0 +1,37 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connection-service
+  labels:
+    app: connection-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: connection-service
+  template:
+    metadata:
+      labels:
+        app: connection-service
+    spec:
+      containers:
+      - name: connection-service
+        image: manishrnl/linked-in-app-connection-service:latest
+        ports:
+        # No ports specified
+        env:
+        - name: JAVA_OPTS
+          value: "-Xmx256m"
+        - name: EUREKA_SERVER_ADDRESS
+          value: "http"
+        - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka"
+        - name: SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL
+          value: "http"
+        - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          value: "true"
+        - name: EUREKA_INSTANCE_NON_SECURE_PORT
+          value: "8001"
+        - name: SERVER_PORT
+          value: "8001"

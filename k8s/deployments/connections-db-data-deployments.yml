@@ -1,0 +1,22 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connections-db-data
+  labels:
+    app: connections-db-data
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: connections-db-data
+  template:
+    metadata:
+      labels:
+        app: connections-db-data
+    spec:
+      containers:
+      - name: connections-db-data
+        image:
+        ports:
+        # No ports specified

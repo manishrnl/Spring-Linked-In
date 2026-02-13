@@ -1,0 +1,53 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  labels:
+    app: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-service
+        image: manishrnl/linked-in-app-user-service:latest
+        ports:
+        # No ports specified
+        env:
+        - name: KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL
+          value: "http"
+        - name: JAVA_OPTS
+          value: "-Xmx256m"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "postgres"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "Manish@2009"
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          value: "http"
+        - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka"
+        - name: SERVER_PORT
+          value: "8003"
+        - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          value: "true"
+        - name: EUREKA_INSTANCE_NON_SECURE_PORT
+          value: "8003"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "create-drop"
+        - name: SPRING_JPA_SHOW_SQL
+          value: "true"
+        - name: SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL
+          value: "true"
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.PostgreSQLDialect"
+        - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
+          value: "org.hibernate.dialect.PostgreSQLDialect"

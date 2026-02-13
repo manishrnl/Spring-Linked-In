@@ -1,0 +1,9 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafbat-ui-config
+data:
+  KAFKA_CLUSTER_0_NAME: "local"
+  KAFKA_CLUSTER_0_BOOTSTRAPSERVERS: "kafka"
+  KAFKA_CLUSTER_0_SCHEMAREGISTRY: "http"

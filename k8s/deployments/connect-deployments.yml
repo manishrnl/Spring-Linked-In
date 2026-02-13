@@ -1,0 +1,59 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connect
+  labels:
+    app: connect
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: connect
+  template:
+    metadata:
+      labels:
+        app: connect
+    spec:
+      containers:
+      - name: connect
+        image: confluentinc/cp-server-connect:7.7.1
+        ports:
+        - containerPort: 8083
+        env:
+        - name: CONNECT_BOOTSTRAP_SERVERS
+          value: "kafka"
+        - name: CONNECT_REST_ADVERTISED_HOST_NAME
+          value: "connect"
+        - name: CONNECT_GROUP_ID
+          value: "compose-connect-group"
+        - name: CONNECT_CONFIG_STORAGE_TOPIC
+          value: "docker-connect-configs"
+        - name: CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
+          value: "1"
+        - name: CONNECT_OFFSET_STORAGE_TOPIC
+          value: "docker-connect-offsets"
+        - name: CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR
+          value: "1"
+        - name: CONNECT_STATUS_STORAGE_TOPIC
+          value: "docker-connect-status"
+        - name: CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
+          value: "1"
+        - name: CONNECT_KEY_CONVERTER
+          value: "org.apache.kafka.connect.storage.StringConverter"
+        - name: CONNECT_VALUE_CONVERTER
+          value: "io.confluent.connect.avro.AvroConverter"
+        - name: CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL
+          value: "http"
+        - name: CONNECT_PLUGIN_PATH
+          value: ""/usr/share/java,/usr/share/confluent-hub-components""
+        - name: test
+          value: "[ "CMD", "curl", "-f", "http"
+        - name: interval
+          value: "10s"
+        - name: timeout
+          value: "5s"
+        - name: retries
+          value: "5"
+        - name: start_period
+          value: "30s"

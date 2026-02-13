@@ -1,0 +1,61 @@
+spring:
+  main:
+    banner-mode: off
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          lower-case-service-id: true   # Allows lb://user-service even if Eureka has USER-SERVICE
+          enabled: true
+      routes:
+        - id: user-service
+          uri: lb://USER-SERVICE        # Use uppercase to match Eureka exactly (safe choice)
+          predicates:
+            - Path=/api/v1/users/**
+          filters:
+            #            - StripPrefix=2
+            - RewritePath=/api/v1/(?<segment>.*), /$\{segment}
+
+        - id: posts-service
+          uri: lb://POSTS-SERVICE
+          predicates:
+            - Path=/api/v1/posts/**
+          filters:
+            - StripPrefix=2
+            - name: Authentication
+              args:
+                enabled: true           # lowercase - most Config classes use this
+
+        - id: connection-service
+          uri: lb://CONNECTION-SERVICE
+          predicates:
+            - Path=/api/v1/connections/**
+          filters:
+            - StripPrefix=2
+            - name: Authentication
+              args:
+                enabled: true
+
+server:
+  port: 8080
+
+jwt:
+  secretKey: sdfgfgdsfg7sd890fgsdfgsidfjgskdjfhglwut9w834ut90jkfjsdfgw9483utoegdfklgndfgowejt59u6
+
+eureka:
+  client:
+    service-url:
+      # Use camelCase for defaultZone
+      defaultZone: ${EUREKA_SERVER_ADDRESS:http://localhost:8761/eureka/}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: gateway,health,info,metrics

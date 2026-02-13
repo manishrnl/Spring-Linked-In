@@ -1,0 +1,15 @@
+spring:
+  main:
+    banner-mode: off
+  application:
+    name: discovery-service
+server:
+  port: 8761
+
+  # Inside discovery-service application.properties
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+
+

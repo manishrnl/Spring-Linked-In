@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: connections-db
+spec:
+  selector:
+    matchLabels:
+      app: connections-db
+  serviceName: connections-db
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: connections-db
+    spec:
+      containers:
+      - name: connections-db
+        image: neo4j:latest
+        resources:
+          limits:
+            memory: "512Mi" # Increased slightly, Neo4j needs a bit more than Postgres to start
+            cpu: "200m"
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+        env:
+          - name: NEO4J_AUTH
+            value: neo4j/Manish@2009
+        ports:
+          - containerPort: 7687
+            name: bolt
+          - containerPort: 7474
+            name: http
+        volumeMounts:
+          - name: data
+            mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: "ebs-sc"
+      volumeMode: Filesystem
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: connections-db
+spec:
+  clusterIP: None
+  selector:
+    app: connections-db
+  ports:
+    - port: 7687
+      targetPort: 7687
+      name: bolt
+    - port: 7474
+      targetPort: 7474
+      name: http

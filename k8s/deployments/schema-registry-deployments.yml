@@ -1,0 +1,41 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: schema-registry
+  labels:
+    app: schema-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: schema-registry
+  template:
+    metadata:
+      labels:
+        app: schema-registry
+    spec:
+      containers:
+      - name: schema-registry
+        image: confluentinc/cp-schema-registry:7.7.1
+        ports:
+        - containerPort: 8081
+        env:
+        - name: SCHEMA_REGISTRY_HOST_NAME
+          value: "schema-registry"
+        - name: SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS
+          value: "kafka"
+        - name: SCHEMA_REGISTRY_LISTENERS
+          value: "http"
+        - name: KAFKASTORE_TOPIC_REPLICATION_FACTOR
+          value: "1"
+        - name: test
+          value: "[ "CMD-SHELL", "wget --quiet --tries=1 --spider http"
+        - name: interval
+          value: "10s"
+        - name: timeout
+          value: "5s"
+        - name: retries
+          value: "5"
+        - name: start_period
+          value: "20s"

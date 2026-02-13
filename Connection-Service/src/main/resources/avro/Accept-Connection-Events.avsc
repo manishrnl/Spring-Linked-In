@@ -1,0 +1,17 @@
+{
+  "name": "AcceptConnectionRequestEvents",
+  "namespace": "com.example.connection_service.events",
+  "type": "record",
+  "fields": [
+    {
+      "name": "senderId",
+      "type": "long",
+      "default": 0
+    },
+    {
+      "name": "receiverId",
+      "type": "long",
+      "default": 0
+    }
+  ]
+}

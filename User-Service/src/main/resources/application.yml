@@ -1,0 +1,40 @@
+spring:
+  main:
+    banner-mode: off
+  application:
+    name: user-service # The Gateway uses this to find the service
+  datasource:
+    url: jdbc:postgresql://user_db:5432/User_Service
+    username: postgres
+    password: Manish@2009
+  kafka:
+    producer:
+      properties:
+        schema.registry.url: http://schema-registry:8081
+
+  # 2. Cloud Stream Config (Used by StreamBridge/Functions)
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: kafka:9092
+          producer-properties:
+            schema.registry.url: http://schema-registry:8081
+eureka:
+  client:
+    service-url:
+      # defaultZone must be camelCase for maximum compatibility
+      defaultZone: ${EUREKA_SERVER_ADDRESS:http://localhost:8761/eureka/}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    # This helps services find each other inside Docker by container name
+    prefer-ip-address: true
+server:
+  port: 8003
+  # Use the Docker service name here
+  servlet:
+    context-path: /users
+
+jwt:
+  secretKey: wsdfuyn23-89573-jenijnsdpiofgnenuwevn84tuw3v984unw3v4uw3v-48w340tvmt5903=w45683=503=-r

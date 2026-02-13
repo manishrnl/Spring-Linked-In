@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: notification-db
+spec:
+  selector:
+    matchLabels:
+      app: notification-db
+  serviceName: notification-db
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: notification-db
+    spec:
+      containers:
+      - name: notification-db
+        image: postgres:latest
+        resources:
+          limits:
+            memory: "200Mi"
+            cpu: "200m"
+          requests:
+            memory: "100Mi"
+            cpu: "100m"
+        env:
+          - name: POSTGRES_DB
+            value: kafka-Notification  # Cleaned up naming
+          - name: POSTGRES_USER
+            value: postgres
+          - name: POSTGRES_PASSWORD
+            value: Manish@2009
+          - name: PGDATA
+            value: /var/lib/postgres/data/pgdata
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgres/data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: "ebs-sc"
+      volumeMode: Filesystem
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-db
+spec:
+  clusterIP: None
+  selector:
+    app: notification-db
+  ports:
+  - port: 5432
+    targetPort: 5432

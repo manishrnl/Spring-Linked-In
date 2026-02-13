@@ -1,0 +1,22 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-db-data
+  labels:
+    app: user-db-data
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-db-data
+  template:
+    metadata:
+      labels:
+        app: user-db-data
+    spec:
+      containers:
+      - name: user-db-data
+        image:
+        ports:
+        # No ports specified

@@ -1,0 +1,36 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-db
+  labels:
+    app: notification-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-db
+  template:
+    metadata:
+      labels:
+        app: notification-db
+    spec:
+      containers:
+      - name: notification-db
+        image: postgres:17
+        ports:
+        # No ports specified
+        env:
+        - name: POSTGRES_DB
+          value: "kafka-Notification"
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          value: "Manish@2009"
+        volumeMounts:
+        - name: volume-0
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: volume-0
+        persistentVolumeClaim:
+          claimName: notification-db-pvc-0

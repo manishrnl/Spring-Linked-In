@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: posts-db-config
+data:
+  POSTGRES_DB: "Posts_Service"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "Manish@2009"

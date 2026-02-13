@@ -1,0 +1,33 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connections-db
+  labels:
+    app: connections-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: connections-db
+  template:
+    metadata:
+      labels:
+        app: connections-db
+    spec:
+      containers:
+      - name: connections-db
+        image: neo4j:latest
+        ports:
+        - containerPort: 7474
+        - containerPort: 7687
+        env:
+        - name: NEO4J_AUTH
+          value: "neo4j/Manish@2009"
+        volumeMounts:
+        - name: volume-0
+          mountPath: /data
+      volumes:
+      - name: volume-0
+        persistentVolumeClaim:
+          claimName: connections-db-pvc-0

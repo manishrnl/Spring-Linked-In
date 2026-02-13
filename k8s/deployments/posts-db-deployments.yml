@@ -1,0 +1,36 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: posts-db
+  labels:
+    app: posts-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: posts-db
+  template:
+    metadata:
+      labels:
+        app: posts-db
+    spec:
+      containers:
+      - name: posts-db
+        image: postgres:17
+        ports:
+        # No ports specified
+        env:
+        - name: POSTGRES_DB
+          value: "Posts_Service"
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          value: "Manish@2009"
+        volumeMounts:
+        - name: volume-0
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: volume-0
+        persistentVolumeClaim:
+          claimName: posts-db-pvc-0

@@ -1,0 +1,22 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: posts-db-data
+  labels:
+    app: posts-db-data
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: posts-db-data
+  template:
+    metadata:
+      labels:
+        app: posts-db-data
+    spec:
+      containers:
+      - name: posts-db-data
+        image:
+        ports:
+        # No ports specified

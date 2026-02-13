@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  labels:
+    app: notification-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: notification-service
+  ports:
+  - port: 9060
+    targetPort: 9060
+    protocol: TCP
+  - port: linkedin-networks
+    targetPort: linkedin-networks
+    protocol: TCP

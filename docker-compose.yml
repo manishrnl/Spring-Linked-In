@@ -1,0 +1,376 @@
+services:
+  # Kafka Broker (KRaft mode - single node)
+  kafka:
+    image: confluentinc/cp-kafka:7.7.1
+    hostname: kafka
+    container_name: linked-in-kafka-broker
+    networks:
+      - linkedin-networks
+    ports:
+      - "9092:9092"
+      - "9101:9101"  # JMX port for metrics / Control Center
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+    healthcheck:
+      test: [ "CMD", "kafka-cluster", "cluster-id", "--bootstrap-server", "localhost:9092" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # Avro Schema Registry
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.7.1
+    hostname: schema-registry
+    container_name: linked-in-kafka-schema-registry
+    networks:
+      - linkedin-networks
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      KAFKASTORE_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8081/ || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # Kafka Connect (with healthcheck)
+  connect:
+    image: confluentinc/cp-server-connect:7.7.1
+    hostname: connect
+    container_name: kafka-connect
+    networks:
+      - linkedin-networks
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: kafka:29092
+      CONNECT_REST_ADVERTISED_HOST_NAME: connect
+      CONNECT_GROUP_ID: compose-connect-group
+      CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-offsets
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8083/" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Confluent Control Center
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:7.7.1
+    hostname: control-center
+    container_name: control-center
+    networks:
+      - linkedin-networks
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+      connect:
+        condition: service_healthy           # Now waits for Connect to be healthy
+    ports:
+      - "9021:9021"   # ← you can change to "9020:9021" if preferred
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: kafka:29092
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      CONTROL_CENTER_CONNECT_CONNECT-DEFAULT_CLUSTER: connect:8083
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      CONTROL_CENTER_KAFKA_CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+
+#   Kafbat UI (alternative lightweight UI)
+  kafbat-ui:
+    container_name: kafbat-ui
+    image: ghcr.io/kafbat/kafka-ui:latest
+    networks:
+      - linkedin-networks
+    ports:
+      - "8090:8080"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_CLUSTER_0_NAME: local
+      KAFKA_CLUSTER_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTER_0_SCHEMAREGISTRY: http://schema-registry:8081
+
+  # ────────────────────────────────────────────────
+  # Databases
+  # ────────────────────────────────────────────────
+
+  notification-db:
+    image: postgres:17
+    container_name: notification-db
+    networks:
+      - linkedin-networks
+    environment:
+      POSTGRES_DB: kafka-Notification
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Manish@2009
+    volumes:
+      - kafka-notification-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d kafka-Notification" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  posts-db:
+    image: postgres:17
+    container_name: posts_db
+    networks:
+      - linkedin-networks
+    environment:
+      POSTGRES_DB: Posts_Service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Manish@2009
+    volumes:
+      - posts-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d Posts_Service" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  user-db:
+    image: postgres:17
+    container_name: user_db
+    networks:
+      - linkedin-networks
+    environment:
+      POSTGRES_DB: User_Service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Manish@2009
+    volumes:
+      - user-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d User_Service" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  connections-db:
+    image: neo4j:latest
+    container_name: connections-db
+    networks:
+      - linkedin-networks
+    environment:
+      NEO4J_AUTH: neo4j/Manish@2009
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - connections-db-data:/data
+    healthcheck:
+      test: [ "CMD", "cypher-shell", "-u", "neo4j", "-p", "Manish@2009", "RETURN 1" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ────────────────────────────────────────────────
+  # Microservices
+  # ────────────────────────────────────────────────
+
+  notification-service:
+    build:
+      context: ./notification-service
+    image: manishrnl/linked-in-app-notification-service:latest
+    container_name: notification-service
+    ports:
+      - "9060:9060"
+    networks:
+      - linkedin-networks
+    depends_on:
+      notification-db:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+    environment:
+      KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      JAVA_OPTS: -Xmx256m
+      EUREKA_SERVER_ADDRESS: http://discovery-service:8761/eureka/
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      SPRING_DATASOURCE_URL: jdbc:postgresql://notification-db:5432/kafka-Notification
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: true
+      EUREKA_INSTANCE_NON_SECURE_PORT: 9060
+      SERVER_PORT: 9060
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+      SPRING_JPA_SHOW_SQL: true
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
+
+  connection-service:
+    build:
+      context: ./connection-service
+    image: manishrnl/linked-in-app-connection-service:latest
+    container_name: connection-service
+    networks:
+      - linkedin-networks
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      connections-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      JAVA_OPTS: -Xmx256m
+      EUREKA_SERVER_ADDRESS: http://discovery-service:8761/eureka/
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: true
+      EUREKA_INSTANCE_NON_SECURE_PORT: 8001
+      SERVER_PORT: 8001
+
+  posts-service:
+    build:
+      context: ./posts-service
+    image: manishrnl/linked-in-app-post-service:latest
+    container_name: post-service
+    networks:
+      - linkedin-networks
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      posts-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      JAVA_OPTS: -Xmx256m
+      EUREKA_SERVER_ADDRESS: http://discovery-service:8761/eureka/
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_DATASOURCE_URL: jdbc:postgresql://posts-db:5432/Posts_Service
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: true
+      EUREKA_INSTANCE_NON_SECURE_PORT: 8002
+      SERVER_PORT: 8002
+      SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+      SPRING_JPA_SHOW_SQL: true
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+
+  discovery-service:
+    build:
+      context: ./discovery-service
+    image: manishrnl/linked-in-app-discovery-service:latest
+    container_name: discovery-service
+    networks:
+      - linkedin-networks
+    environment:
+      JAVA_OPTS: -Xmx256m -Xms128m
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8761/eureka/apps" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  user-service:
+    build:
+      context: ./user-service
+    image: manishrnl/linked-in-app-user-service:latest
+    container_name: user-service
+    networks:
+      - linkedin-networks
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      user-db:
+        condition: service_healthy
+    environment:
+      KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      JAVA_OPTS: -Xmx256m
+      SPRING_DATASOURCE_URL: jdbc:postgresql://user_db:5432/User_Service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: Manish@2009
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SERVER_PORT: 8003
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: true
+      EUREKA_INSTANCE_NON_SECURE_PORT: 8003
+      SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+      SPRING_JPA_SHOW_SQL: true
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    image: manishrnl/linked-in-app-api-gateway:latest
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    networks:
+      - linkedin-networks
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+    environment:
+      JAVA_OPTS: -Xmx256m
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_ENABLED: true
+      SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_LOWER_CASE_SERVICE_ID: true
+
+networks:
+  linkedin-networks:
+    driver: bridge
+
+volumes:
+  kafka-notification-data:
+  user-db-data:
+  posts-db-data:
+  connections-db-data:
+
+

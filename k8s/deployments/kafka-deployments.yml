@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka
+  labels:
+    app: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+      - name: kafka
+        image: confluentinc/cp-kafka:7.7.1
+        ports:
+        - containerPort: 9092
+        - containerPort: 9101  # JMX port for metrics
+        env:
+        - name: KAFKA_NODE_ID
+          value: "1"
+        - name: KAFKA_PROCESS_ROLES
+          value: "broker,controller"
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          value: "CONTROLLER"
+        - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+          value: "1@kafka"
+        - name: KAFKA_LISTENERS
+          value: "PLAINTEXT"
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: "PLAINTEXT"
+        - name: KAFKA_INTER_BROKER_LISTENER_NAME
+          value: "PLAINTEXT"
+        - name: KAFKA_CONTROLLER_LISTENER_NAMES
+          value: "CONTROLLER"
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "1"
+        - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+          value: "1"
+        - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+          value: "1"
+        - name: CLUSTER_ID
+          value: "MkU3OEVBNTcwNTJENDM2Qk"
+        - name: KAFKA_JMX_PORT
+          value: "9101"
+        - name: KAFKA_JMX_HOSTNAME
+          value: "localhost"
+        - name: KAFKA_LOG_DIRS
+          value: "/tmp/kraft-combined-logs"
+        - name: test
+          value: "[ "CMD", "kafka-cluster", "cluster-id", "--bootstrap-server", "localhost"
+        - name: interval
+          value: "10s"
+        - name: timeout
+          value: "10s"
+        - name: retries
+          value: "10"
+        - name: start_period
+          value: "30s"

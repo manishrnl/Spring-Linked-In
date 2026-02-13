@@ -1,0 +1,32 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  labels:
+    app: api-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+      - name: api-gateway
+        image: manishrnl/linked-in-app-api-gateway:latest
+        ports:
+        - containerPort: 8080
+        - containerPort: linkedin-networks
+        env:
+        - name: JAVA_OPTS
+          value: "-Xmx256m"
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          value: "http"
+        - name: SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_ENABLED
+          value: "true"
+        - name: SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_LOWER_CASE_SERVICE_ID
+          value: "true"

@@ -1,0 +1,8 @@
+# Ignore build logs and IDE settings
+bin/
+.idea/
+.vscode/
+.git/
+*.log
+# Ignore the local mvn folder if you are already copying it
+.mvn/wrapper/maven-wrapper.jar

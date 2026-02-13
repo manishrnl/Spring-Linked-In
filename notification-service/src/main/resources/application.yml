@@ -1,0 +1,69 @@
+spring:
+  main:
+    banner-mode: off
+  application:
+    name: notification-service
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      group-id: notification-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      max-poll-records: 100
+      # Use ErrorHandlingDeserializer to safely manage SerializationExceptions
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        # Define the actual delegates
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.LongDeserializer
+        spring.deserializer.value.delegate.class: io.confluent.kafka.serializers.KafkaAvroDeserializer
+        # Using the safe port 8085 to avoid Windows 8081 conflicts
+
+        specific.avro.reader: true
+    producer:
+      properties:
+        schema.registry.url: http://schema-registry:8081
+
+
+  # 2. Cloud Stream Config (Used by StreamBridge/Functions)
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: kafka:9092
+          producer-properties:
+            schema.registry.url: http://schema-registry:8081
+
+  datasource:
+    url: jdbc:postgresql://notification-db:5432/kafka-Notification
+    username: postgres
+    password: Manish@2009
+  jpa:
+    hibernate:
+      ddl-auto: update
+      show-sql: true
+      properties:
+        hibernate:
+          format_sql: true
+
+
+
+eureka:
+  client:
+    service-url:
+      # defaultZone must be camelCase for maximum compatibility
+      defaultZone: ${EUREKA_SERVER_ADDRESS:http://localhost:8761/eureka/}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    instance-id: ${spring.application.name}:${random.value}
+    hostname: notification-service
+    # This helps services find each other inside Docker by container name
+    prefer-ip-address: true
+
+
+server:
+  port: 9060
+
+
+

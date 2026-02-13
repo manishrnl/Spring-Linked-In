@@ -1,0 +1,15 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: schema-registry-config
+data:
+  SCHEMA_REGISTRY_HOST_NAME: "schema-registry"
+  SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "kafka"
+  SCHEMA_REGISTRY_LISTENERS: "http"
+  KAFKASTORE_TOPIC_REPLICATION_FACTOR: "1"
+  test: "[ "CMD-SHELL", "wget --quiet --tries=1 --spider http"
+  interval: "10s"
+  timeout: "5s"
+  retries: "5"
+  start_period: "20s"

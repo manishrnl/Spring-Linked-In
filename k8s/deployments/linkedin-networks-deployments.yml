@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linkedin-networks
+  labels:
+    app: linkedin-networks
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: linkedin-networks
+  template:
+    metadata:
+      labels:
+        app: linkedin-networks
+    spec:
+      containers:
+      - name: linkedin-networks
+        image:
+        ports:
+        # No ports specified

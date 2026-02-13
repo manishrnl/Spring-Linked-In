@@ -1,0 +1,1194 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka
+  labels:
+    app: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+      - name: kafka
+        image: confluentinc/cp-kafka:7.7.1
+        ports:
+        - containerPort: 9092
+        - containerPort: 9101  # JMX port for metrics
+        env:
+        - name: KAFKA_NODE_ID
+          value: "1"
+        - name: KAFKA_PROCESS_ROLES
+          value: "broker,controller"
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          value: "CONTROLLER"
+        - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+          value: "1@kafka"
+        - name: KAFKA_LISTENERS
+          value: "PLAINTEXT"
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: "PLAINTEXT"
+        - name: KAFKA_INTER_BROKER_LISTENER_NAME
+          value: "PLAINTEXT"
+        - name: KAFKA_CONTROLLER_LISTENER_NAMES
+          value: "CONTROLLER"
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "1"
+        - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+          value: "1"
+        - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+          value: "1"
+        - name: CLUSTER_ID
+          value: "MkU3OEVBNTcwNTJENDM2Qk"
+        - name: KAFKA_JMX_PORT
+          value: "9101"
+        - name: KAFKA_JMX_HOSTNAME
+          value: "localhost"
+        - name: KAFKA_LOG_DIRS
+          value: "/tmp/kraft-combined-logs"
+        - name: test
+          value: "[ "CMD", "kafka-cluster", "cluster-id", "--bootstrap-server", "localhost"
+        - name: interval
+          value: "10s"
+        - name: timeout
+          value: "10s"
+        - name: retries
+          value: "10"
+        - name: start_period
+          value: "30s"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  labels:
+    app: kafka
+spec:
+  type: LoadBalancer
+  selector:
+    app: kafka
+  ports:
+  - port: 9092
+    targetPort: 9092
+    protocol: TCP
+  - port: 9101
+    targetPort: 9101  # JMX port for metrics
+    protocol: TCP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-config
+data:
+  KAFKA_NODE_ID: "1"
+  KAFKA_PROCESS_ROLES: "broker,controller"
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER"
+  KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka"
+  KAFKA_LISTENERS: "PLAINTEXT"
+  KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT"
+  KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+  KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+  CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+  KAFKA_JMX_PORT: "9101"
+  KAFKA_JMX_HOSTNAME: "localhost"
+  KAFKA_LOG_DIRS: "/tmp/kraft-combined-logs"
+  test: "[ "CMD", "kafka-cluster", "cluster-id", "--bootstrap-server", "localhost"
+  interval: "10s"
+  timeout: "10s"
+  retries: "10"
+  start_period: "30s"
+---
+# No PersistentVolumeClaim needed for kafka (no volumes)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: schema-registry
+  labels:
+    app: schema-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: schema-registry
+  template:
+    metadata:
+      labels:
+        app: schema-registry
+    spec:
+      containers:
+      - name: schema-registry
+        image: confluentinc/cp-schema-registry:7.7.1
+        ports:
+        - containerPort: 8081
+        env:
+        - name: SCHEMA_REGISTRY_HOST_NAME
+          value: "schema-registry"
+        - name: SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS
+          value: "kafka"
+        - name: SCHEMA_REGISTRY_LISTENERS
+          value: "http"
+        - name: KAFKASTORE_TOPIC_REPLICATION_FACTOR
+          value: "1"
+        - name: test
+          value: "[ "CMD-SHELL", "wget --quiet --tries=1 --spider http"
+        - name: interval
+          value: "10s"
+        - name: timeout
+          value: "5s"
+        - name: retries
+          value: "5"
+        - name: start_period
+          value: "20s"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: schema-registry
+  labels:
+    app: schema-registry
+spec:
+  type: LoadBalancer
+  selector:
+    app: schema-registry
+  ports:
+  - port: 8081
+    targetPort: 8081
+    protocol: TCP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: schema-registry-config
+data:
+  SCHEMA_REGISTRY_HOST_NAME: "schema-registry"
+  SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "kafka"
+  SCHEMA_REGISTRY_LISTENERS: "http"
+  KAFKASTORE_TOPIC_REPLICATION_FACTOR: "1"
+  test: "[ "CMD-SHELL", "wget --quiet --tries=1 --spider http"
+  interval: "10s"
+  timeout: "5s"
+  retries: "5"
+  start_period: "20s"
+---
+# No PersistentVolumeClaim needed for schema-registry (no volumes)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connect
+  labels:
+    app: connect
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: connect
+  template:
+    metadata:
+      labels:
+        app: connect
+    spec:
+      containers:
+      - name: connect
+        image: confluentinc/cp-server-connect:7.7.1
+        ports:
+        - containerPort: 8083
+        env:
+        - name: CONNECT_BOOTSTRAP_SERVERS
+          value: "kafka"
+        - name: CONNECT_REST_ADVERTISED_HOST_NAME
+          value: "connect"
+        - name: CONNECT_GROUP_ID
+          value: "compose-connect-group"
+        - name: CONNECT_CONFIG_STORAGE_TOPIC
+          value: "docker-connect-configs"
+        - name: CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
+          value: "1"
+        - name: CONNECT_OFFSET_STORAGE_TOPIC
+          value: "docker-connect-offsets"
+        - name: CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR
+          value: "1"
+        - name: CONNECT_STATUS_STORAGE_TOPIC
+          value: "docker-connect-status"
+        - name: CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
+          value: "1"
+        - name: CONNECT_KEY_CONVERTER
+          value: "org.apache.kafka.connect.storage.StringConverter"
+        - name: CONNECT_VALUE_CONVERTER
+          value: "io.confluent.connect.avro.AvroConverter"
+        - name: CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL
+          value: "http"
+        - name: CONNECT_PLUGIN_PATH
+          value: ""/usr/share/java,/usr/share/confluent-hub-components""
+        - name: test
+          value: "[ "CMD", "curl", "-f", "http"
+        - name: interval
+          value: "10s"
+        - name: timeout
+          value: "5s"
+        - name: retries
+          value: "5"
+        - name: start_period
+          value: "30s"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: connect
+  labels:
+    app: connect
+spec:
+  type: LoadBalancer
+  selector:
+    app: connect
+  ports:
+  - port: 8083
+    targetPort: 8083
+    protocol: TCP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: connect-config
+data:
+  CONNECT_BOOTSTRAP_SERVERS: "kafka"
+  CONNECT_REST_ADVERTISED_HOST_NAME: "connect"
+  CONNECT_GROUP_ID: "compose-connect-group"
+  CONNECT_CONFIG_STORAGE_TOPIC: "docker-connect-configs"
+  CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+  CONNECT_OFFSET_STORAGE_TOPIC: "docker-connect-offsets"
+  CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+  CONNECT_STATUS_STORAGE_TOPIC: "docker-connect-status"
+  CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+  CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+  CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+  CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http"
+  CONNECT_PLUGIN_PATH: ""/usr/share/java,/usr/share/confluent-hub-components""
+  test: "[ "CMD", "curl", "-f", "http"
+  interval: "10s"
+  timeout: "5s"
+  retries: "5"
+  start_period: "30s"
+---
+# No PersistentVolumeClaim needed for connect (no volumes)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: control-center
+  labels:
+    app: control-center
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: control-center
+  template:
+    metadata:
+      labels:
+        app: control-center
+    spec:
+      containers:
+      - name: control-center
+        image: confluentinc/cp-enterprise-control-center:7.7.1
+        ports:
+        - containerPort: 9021   # ← you can change to 9020
+        env:
+        - name: CONTROL_CENTER_BOOTSTRAP_SERVERS
+          value: "kafka"
+        - name: CONTROL_CENTER_SCHEMA_REGISTRY_URL
+          value: "http"
+        - name: CONTROL_CENTER_CONNECT_CONNECT-DEFAULT_CLUSTER
+          value: "connect"
+        - name: CONTROL_CENTER_REPLICATION_FACTOR
+          value: "1"
+        - name: CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS
+          value: "1"
+        - name: CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS
+          value: "1"
+        - name: CONFLUENT_METRICS_TOPIC_REPLICATION
+          value: "1"
+        - name: CONTROL_CENTER_KAFKA_CLUSTER_ID
+          value: "MkU3OEVBNTcwNTJENDM2Qk"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: control-center
+  labels:
+    app: control-center
+spec:
+  type: LoadBalancer
+  selector:
+    app: control-center
+  ports:
+  - port: 9021
+    targetPort: 9021   # ← you can change to 9020
+    protocol: TCP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: control-center-config
+data:
+  CONTROL_CENTER_BOOTSTRAP_SERVERS: "kafka"
+  CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http"
+  CONTROL_CENTER_CONNECT_CONNECT-DEFAULT_CLUSTER: "connect"
+  CONTROL_CENTER_REPLICATION_FACTOR: "1"
+  CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: "1"
+  CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: "1"
+  CONFLUENT_METRICS_TOPIC_REPLICATION: "1"
+  CONTROL_CENTER_KAFKA_CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+---
+# No PersistentVolumeClaim needed for control-center (no volumes)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafbat-ui
+  labels:
+    app: kafbat-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafbat-ui
+  template:
+    metadata:
+      labels:
+        app: kafbat-ui
+    spec:
+      containers:
+      - name: kafbat-ui
+        image: ghcr.io/kafbat/kafka-ui:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: KAFKA_CLUSTER_0_NAME
+          value: "local"
+        - name: KAFKA_CLUSTER_0_BOOTSTRAPSERVERS
+          value: "kafka"
+        - name: KAFKA_CLUSTER_0_SCHEMAREGISTRY
+          value: "http"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafbat-ui
+  labels:
+    app: kafbat-ui
+spec:
+  type: LoadBalancer
+  selector:
+    app: kafbat-ui
+  ports:
+  - port: 8090
+    targetPort: 8080
+    protocol: TCP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafbat-ui-config
+data:
+  KAFKA_CLUSTER_0_NAME: "local"
+  KAFKA_CLUSTER_0_BOOTSTRAPSERVERS: "kafka"
+  KAFKA_CLUSTER_0_SCHEMAREGISTRY: "http"
+---
+# No PersistentVolumeClaim needed for kafbat-ui (no volumes)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-db
+  labels:
+    app: notification-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-db
+  template:
+    metadata:
+      labels:
+        app: notification-db
+    spec:
+      containers:
+      - name: notification-db
+        image: postgres:17
+        ports:
+        # No ports specified
+        env:
+        - name: POSTGRES_DB
+          value: "kafka-Notification"
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          value: "Manish@2009"
+        volumeMounts:
+        - name: volume-0
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: volume-0
+        persistentVolumeClaim:
+          claimName: notification-db-pvc-0
+---
+# No Service needed for notification-db (no ports exposed)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-db-config
+data:
+  POSTGRES_DB: "kafka-Notification"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "Manish@2009"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: notification-db-pvc-0
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: posts-db
+  labels:
+    app: posts-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: posts-db
+  template:
+    metadata:
+      labels:
+        app: posts-db
+    spec:
+      containers:
+      - name: posts-db
+        image: postgres:17
+        ports:
+        # No ports specified
+        env:
+        - name: POSTGRES_DB
+          value: "Posts_Service"
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          value: "Manish@2009"
+        volumeMounts:
+        - name: volume-0
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: volume-0
+        persistentVolumeClaim:
+          claimName: posts-db-pvc-0
+---
+# No Service needed for posts-db (no ports exposed)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: posts-db-config
+data:
+  POSTGRES_DB: "Posts_Service"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "Manish@2009"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: posts-db-pvc-0
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-db
+  labels:
+    app: user-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-db
+  template:
+    metadata:
+      labels:
+        app: user-db
+    spec:
+      containers:
+      - name: user-db
+        image: postgres:17
+        ports:
+        # No ports specified
+        env:
+        - name: POSTGRES_DB
+          value: "User_Service"
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          value: "Manish@2009"
+        volumeMounts:
+        - name: volume-0
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: volume-0
+        persistentVolumeClaim:
+          claimName: user-db-pvc-0
+---
+# No Service needed for user-db (no ports exposed)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-db-config
+data:
+  POSTGRES_DB: "User_Service"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "Manish@2009"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: user-db-pvc-0
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connections-db
+  labels:
+    app: connections-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: connections-db
+  template:
+    metadata:
+      labels:
+        app: connections-db
+    spec:
+      containers:
+      - name: connections-db
+        image: neo4j:latest
+        ports:
+        - containerPort: 7474
+        - containerPort: 7687
+        env:
+        - name: NEO4J_AUTH
+          value: "neo4j/Manish@2009"
+        volumeMounts:
+        - name: volume-0
+          mountPath: /data
+      volumes:
+      - name: volume-0
+        persistentVolumeClaim:
+          claimName: connections-db-pvc-0
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: connections-db
+  labels:
+    app: connections-db
+spec:
+  type: LoadBalancer
+  selector:
+    app: connections-db
+  ports:
+  - port: 7474
+    targetPort: 7474
+    protocol: TCP
+  - port: 7687
+    targetPort: 7687
+    protocol: TCP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: connections-db-config
+data:
+  NEO4J_AUTH: "neo4j/Manish@2009"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: connections-db-pvc-0
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  labels:
+    app: notification-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+      - name: notification-service
+        image: manishrnl/linked-in-app-notification-service:latest
+        ports:
+        - containerPort: 9060
+        - containerPort: linkedin-networks
+        env:
+        - name: KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL
+          value: "http"
+        - name: JAVA_OPTS
+          value: "-Xmx256m"
+        - name: EUREKA_SERVER_ADDRESS
+          value: "http"
+        - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka"
+        - name: SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL
+          value: "http"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc"
+        - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          value: "true"
+        - name: EUREKA_INSTANCE_NON_SECURE_PORT
+          value: "9060"
+        - name: SERVER_PORT
+          value: "9060"
+        - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
+          value: "org.hibernate.dialect.PostgreSQLDialect"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "create-drop"
+        - name: SPRING_JPA_SHOW_SQL
+          value: "true"
+        - name: SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL
+          value: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  labels:
+    app: notification-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: notification-service
+  ports:
+  - port: 9060
+    targetPort: 9060
+    protocol: TCP
+  - port: linkedin-networks
+    targetPort: linkedin-networks
+    protocol: TCP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-service-config
+data:
+  KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: "http"
+  JAVA_OPTS: "-Xmx256m"
+  EUREKA_SERVER_ADDRESS: "http"
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka"
+  SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: "http"
+  SPRING_DATASOURCE_URL: "jdbc"
+  EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+  EUREKA_INSTANCE_NON_SECURE_PORT: "9060"
+  SERVER_PORT: "9060"
+  SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: "org.hibernate.dialect.PostgreSQLDialect"
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "create-drop"
+  SPRING_JPA_SHOW_SQL: "true"
+  SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+---
+# No PersistentVolumeClaim needed for notification-service (no volumes)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connection-service
+  labels:
+    app: connection-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: connection-service
+  template:
+    metadata:
+      labels:
+        app: connection-service
+    spec:
+      containers:
+      - name: connection-service
+        image: manishrnl/linked-in-app-connection-service:latest
+        ports:
+        # No ports specified
+        env:
+        - name: JAVA_OPTS
+          value: "-Xmx256m"
+        - name: EUREKA_SERVER_ADDRESS
+          value: "http"
+        - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka"
+        - name: SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL
+          value: "http"
+        - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          value: "true"
+        - name: EUREKA_INSTANCE_NON_SECURE_PORT
+          value: "8001"
+        - name: SERVER_PORT
+          value: "8001"
+---
+# No Service needed for connection-service (no ports exposed)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: connection-service-config
+data:
+  JAVA_OPTS: "-Xmx256m"
+  EUREKA_SERVER_ADDRESS: "http"
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka"
+  SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: "http"
+  EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+  EUREKA_INSTANCE_NON_SECURE_PORT: "8001"
+  SERVER_PORT: "8001"
+---
+# No PersistentVolumeClaim needed for connection-service (no volumes)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: posts-service
+  labels:
+    app: posts-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: posts-service
+  template:
+    metadata:
+      labels:
+        app: posts-service
+    spec:
+      containers:
+      - name: posts-service
+        image: manishrnl/linked-in-app-post-service:latest
+        ports:
+        # No ports specified
+        env:
+        - name: KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL
+          value: "http"
+        - name: JAVA_OPTS
+          value: "-Xmx256m"
+        - name: EUREKA_SERVER_ADDRESS
+          value: "http"
+        - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc"
+        - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          value: "true"
+        - name: EUREKA_INSTANCE_NON_SECURE_PORT
+          value: "8002"
+        - name: SERVER_PORT
+          value: "8002"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "create-drop"
+        - name: SPRING_JPA_SHOW_SQL
+          value: "true"
+        - name: SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL
+          value: "true"
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.PostgreSQLDialect"
+        - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
+          value: "org.hibernate.dialect.PostgreSQLDialect"
+---
+# No Service needed for posts-service (no ports exposed)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: posts-service-config
+data:
+  KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: "http"
+  JAVA_OPTS: "-Xmx256m"
+  EUREKA_SERVER_ADDRESS: "http"
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka"
+  SPRING_DATASOURCE_URL: "jdbc"
+  EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+  EUREKA_INSTANCE_NON_SECURE_PORT: "8002"
+  SERVER_PORT: "8002"
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "create-drop"
+  SPRING_JPA_SHOW_SQL: "true"
+  SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+  SPRING_JPA_DATABASE_PLATFORM: "org.hibernate.dialect.PostgreSQLDialect"
+  SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: "org.hibernate.dialect.PostgreSQLDialect"
+---
+# No PersistentVolumeClaim needed for posts-service (no volumes)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discovery-service
+  labels:
+    app: discovery-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: discovery-service
+  template:
+    metadata:
+      labels:
+        app: discovery-service
+    spec:
+      containers:
+      - name: discovery-service
+        image: manishrnl/linked-in-app-discovery-service:latest
+        ports:
+        - containerPort: 8761
+        env:
+        - name: JAVA_OPTS
+          value: "-Xmx256m -Xms128m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: discovery-service
+  labels:
+    app: discovery-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: discovery-service
+  ports:
+  - port: 8761
+    targetPort: 8761
+    protocol: TCP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: discovery-service-config
+data:
+  JAVA_OPTS: "-Xmx256m -Xms128m"
+---
+# No PersistentVolumeClaim needed for discovery-service (no volumes)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  labels:
+    app: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-service
+        image: manishrnl/linked-in-app-user-service:latest
+        ports:
+        # No ports specified
+        env:
+        - name: KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL
+          value: "http"
+        - name: JAVA_OPTS
+          value: "-Xmx256m"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "postgres"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "Manish@2009"
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          value: "http"
+        - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka"
+        - name: SERVER_PORT
+          value: "8003"
+        - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          value: "true"
+        - name: EUREKA_INSTANCE_NON_SECURE_PORT
+          value: "8003"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "create-drop"
+        - name: SPRING_JPA_SHOW_SQL
+          value: "true"
+        - name: SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL
+          value: "true"
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.PostgreSQLDialect"
+        - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
+          value: "org.hibernate.dialect.PostgreSQLDialect"
+---
+# No Service needed for user-service (no ports exposed)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-service-config
+data:
+  KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: "http"
+  JAVA_OPTS: "-Xmx256m"
+  SPRING_DATASOURCE_URL: "jdbc"
+  SPRING_DATASOURCE_USERNAME: "postgres"
+  SPRING_DATASOURCE_PASSWORD: "Manish@2009"
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http"
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka"
+  SERVER_PORT: "8003"
+  EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+  EUREKA_INSTANCE_NON_SECURE_PORT: "8003"
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "create-drop"
+  SPRING_JPA_SHOW_SQL: "true"
+  SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+  SPRING_JPA_DATABASE_PLATFORM: "org.hibernate.dialect.PostgreSQLDialect"
+  SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: "org.hibernate.dialect.PostgreSQLDialect"
+---
+# No PersistentVolumeClaim needed for user-service (no volumes)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  labels:
+    app: api-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+      - name: api-gateway
+        image: manishrnl/linked-in-app-api-gateway:latest
+        ports:
+        - containerPort: 8080
+        - containerPort: linkedin-networks
+        env:
+        - name: JAVA_OPTS
+          value: "-Xmx256m"
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          value: "http"
+        - name: SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_ENABLED
+          value: "true"
+        - name: SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_LOWER_CASE_SERVICE_ID
+          value: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  labels:
+    app: api-gateway
+spec:
+  type: LoadBalancer
+  selector:
+    app: api-gateway
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+  - port: linkedin-networks
+    targetPort: linkedin-networks
+    protocol: TCP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-gateway-config
+data:
+  JAVA_OPTS: "-Xmx256m"
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http"
+  SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_ENABLED: "true"
+  SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_LOWER_CASE_SERVICE_ID: "true"
+---
+# No PersistentVolumeClaim needed for api-gateway (no volumes)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linkedin-networks
+  labels:
+    app: linkedin-networks
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: linkedin-networks
+  template:
+    metadata:
+      labels:
+        app: linkedin-networks
+    spec:
+      containers:
+      - name: linkedin-networks
+        image:
+        ports:
+        # No ports specified
+---
+# No Service needed for linkedin-networks (no ports exposed)
+---
+# No ConfigMap needed for linkedin-networks (no environment variables)
+---
+# No PersistentVolumeClaim needed for linkedin-networks (no volumes)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-notification-data
+  labels:
+    app: kafka-notification-data
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-notification-data
+  template:
+    metadata:
+      labels:
+        app: kafka-notification-data
+    spec:
+      containers:
+      - name: kafka-notification-data
+        image:
+        ports:
+        # No ports specified
+---
+# No Service needed for kafka-notification-data (no ports exposed)
+---
+# No ConfigMap needed for kafka-notification-data (no environment variables)
+---
+# No PersistentVolumeClaim needed for kafka-notification-data (no volumes)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-db-data
+  labels:
+    app: user-db-data
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-db-data
+  template:
+    metadata:
+      labels:
+        app: user-db-data
+    spec:
+      containers:
+      - name: user-db-data
+        image:
+        ports:
+        # No ports specified
+---
+# No Service needed for user-db-data (no ports exposed)
+---
+# No ConfigMap needed for user-db-data (no environment variables)
+---
+# No PersistentVolumeClaim needed for user-db-data (no volumes)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: posts-db-data
+  labels:
+    app: posts-db-data
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: posts-db-data
+  template:
+    metadata:
+      labels:
+        app: posts-db-data
+    spec:
+      containers:
+      - name: posts-db-data
+        image:
+        ports:
+        # No ports specified
+---
+# No Service needed for posts-db-data (no ports exposed)
+---
+# No ConfigMap needed for posts-db-data (no environment variables)
+---
+# No PersistentVolumeClaim needed for posts-db-data (no volumes)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connections-db-data
+  labels:
+    app: connections-db-data
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: connections-db-data
+  template:
+    metadata:
+      labels:
+        app: connections-db-data
+    spec:
+      containers:
+      - name: connections-db-data
+        image:
+        ports:
+        # No ports specified
+---
+# No Service needed for connections-db-data (no ports exposed)
+---
+# No ConfigMap needed for connections-db-data (no environment variables)
+---
+# No PersistentVolumeClaim needed for connections-db-data (no volumes)

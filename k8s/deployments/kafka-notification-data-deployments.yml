@@ -1,0 +1,22 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-notification-data
+  labels:
+    app: kafka-notification-data
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-notification-data
+  template:
+    metadata:
+      labels:
+        app: kafka-notification-data
+    spec:
+      containers:
+      - name: kafka-notification-data
+        image:
+        ports:
+        # No ports specified
